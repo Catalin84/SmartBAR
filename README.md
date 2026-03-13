@@ -1,3 +1,4 @@
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/07686a78-dd3c-476c-8fc6-2c778c051f2a" />
 
 BAR.OS
 Smart Dispenser System
