@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>BARUL SMART.OS — Smart Dispenser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SCANLINE OVERLAY (visual effect)             -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  HEADER                                        -->
+  <!-- ══════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-logo">
+      <span class="logo-bar">SMARTBAR</span><span class="logo-dot">.</span><span class="logo-os">OS</span>
+    </div>
+    <div class="header-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-label" id="statusLabel">READY</span>
+    </div>
+    <div class="header-time" id="headerTime">00:00</div>
+
+    <a href="admin.html" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#3d4560;text-decoration:none;letter-spacing:2px;padding:5px 10px;border:1px solid rgba(255,255,255,0.05);border-radius:6px;transition:color .2s,border-color .2s;" onmouseover="this.style.color='#8892a4';this.style.borderColor='rgba(255,255,255,0.12)'" onmouseout="this.style.color='#3d4560';this.style.borderColor='rgba(255,255,255,0.05)'">ADMIN</a>
+
+    <button id="btnFullscreen" onclick="toggleFullscreen()" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#3d4560;background:none;border:1px solid rgba(255,255,255,0.05);border-radius:6px;padding:5px 10px;cursor:pointer;letter-spacing:2px;transition:color .2s,border-color .2s;">⛶ FS</button>
+  </header>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SCREEN 1 — DRINK SELECTION                   -->
+  <!-- ══════════════════════════════════════════════ -->
+  <main id="screenHome" class="screen screen--home active">
+    <div class="screen-title">
+      <h1>SALUT, CE BAUTURA VREI SA BEI?</h1>
+      <p class="screen-subtitle">APASA PE IMAGINE SA SELECTEZI BAUTURA PREFERATA</p>
+    </div>
+
+    <div class="drink-grid" id="drinkGrid">
+      <!-- Populated by app.js -->
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SCREEN 2 — DOSE SELECTION                    -->
+  <!-- ══════════════════════════════════════════════ -->
+  <main id="screenDose" class="screen screen--dose">
+    <div class="dose-layout">
+
+      <!-- Left panel: drink info -->
+      <div class="dose-drink-panel">
+        <div class="dose-img-wrapper">
+          <img id="doseImage" src="" alt="" class="dose-img" />
+          <div class="dose-img-glow" id="doseGlow"></div>
+        </div>
+        <h2 class="dose-drink-name" id="doseDrinkName">VODKA</h2>
+        <p class="dose-drink-origin" id="doseDrinkOrigin">Russia · 40% ABV</p>
+      </div>
+
+      <!-- Right panel: dose buttons + actions -->
+      <div class="dose-controls-panel">
+        <p class="dose-prompt">CE CANTITATE DORESTI</p>
+
+        <div class="dose-buttons" id="doseButtons">
+          <!-- Populated by app.js -->
+        </div>
+
+        <div class="dose-actions">
+          <button class="btn-back" id="btnBack" aria-label="Go back">
+            <span class="btn-back-arrow">←</span> INAPOI
+          </button>
+          <button class="btn-pour" id="btnPour" aria-label="Pour drink">
+            TOARNA FARA MILA :)
+            <span class="btn-pour-icon">⚡</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SCREEN 3 — POURING STATE                     -->
+  <!-- ══════════════════════════════════════════════ -->
+  <main id="screenPour" class="screen screen--pour">
+    <div class="pour-content">
+
+      <div class="pour-ring-outer">
+        <div class="pour-ring-mid">
+          <div class="pour-ring-inner">
+            <div class="pour-icon" id="pourIcon">⚗</div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="pour-title" id="pourTitle">SE TOARNA BAUTURA…</h2>
+      <p class="pour-detail" id="pourDetail">Dispensing... <span id="pourMl">40</span>ml of <span id="pourDrinkLabel">Vodka</span></p>
+
+      <!-- Progress bar -->
+      <div class="pour-progress-track">
+        <div class="pour-progress-fill" id="pourProgressFill"></div>
+        <div class="pour-progress-label" id="pourProgressLabel">0%</div>
+      </div>
+
+      <!-- Particle drops (decorative) -->
+      <div class="drops-container" id="dropsContainer" aria-hidden="true"></div>
+
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  TOAST NOTIFICATION                           -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+  <script>
+    function toggleFullscreen() {
+      const btn = document.getElementById('btnFullscreen');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          btn.textContent = '✕ FS';
+          btn.style.color = '#00ff88';
+          btn.style.borderColor = 'rgba(0,255,136,0.3)';
+        });
+      } else {
+        document.exitFullscreen().then(() => {
+          btn.textContent = '⛶ FS';
+          btn.style.color = '#3d4560';
+          btn.style.borderColor = 'rgba(255,255,255,0.05)';
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!document.fullscreenEnabled) {
+        document.getElementById('btnFullscreen').style.display = 'none';
+      }
+    });
+  </script>
+
+  <script src="app.js"></script>
+</body>
+</html>

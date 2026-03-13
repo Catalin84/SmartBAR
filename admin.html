@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAR.OS — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    /* ── GPIO TAB ──────────────────────────────────────────────── */
+    .gpio-section        { margin-bottom: 2rem; }
+    .gpio-section-title  { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--neon-cyan,#00d4ff); letter-spacing:.1em; margin-bottom:1rem; border-bottom:1px solid #1e2a38; padding-bottom:.4rem; }
+    .gpio-table          { display:flex; flex-direction:column; gap:.6rem; }
+    .gpio-row            { display:grid; grid-template-columns:1fr 2rem 14rem 8rem; gap:1rem; align-items:center; background:#0e1620; border:1px solid #1e2a38; border-radius:8px; padding:.8rem 1rem; }
+    .gpio-drink-info     { display:flex; align-items:center; gap:.8rem; }
+    .gpio-color-dot      { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+    .gpio-drink-name     { font-family:'Rajdhani',sans-serif; font-weight:700; color:#e8f4ff; font-size:.95rem; }
+    .gpio-drink-id code  { font-family:'Share Tech Mono',monospace; color:#6a8caa; font-size:.8rem; }
+    .gpio-arrow          { color:#334; font-size:1.2rem; text-align:center; }
+    .gpio-select-wrap    { width:100%; }
+    .gpio-select         { width:100%; }
+    .gpio-relay-info     { font-family:'Share Tech Mono',monospace; font-size:.8rem; color:#6a8caa; }
+    .gpio-pin-badge      { display:inline-block; padding:.2rem .5rem; background:#112; border:1px solid #00d4ff55; border-radius:4px; color:#00d4ff; font-size:.78rem; }
+    .gpio-unset          { color:#ff3d57; font-size:.8rem; }
+    .gpio-badge          { display:inline-block; padding:.15rem .5rem; background:#0a1f0a; border:1px solid #00e67688; border-radius:4px; color:#00e676; font-family:'Share Tech Mono',monospace; font-size:.75rem; }
+    .gpio-badge--warn    { background:#1f0a0a; border-color:#ff3d5788; color:#ff3d57; }
+    .gpio-save-btn       { margin-top:1rem; }
+
+    /* Pinout visual */
+    .pinout-wrap         { overflow-x:auto; }
+    .pinout-grid         { display:grid; grid-template-columns:1fr 1fr; gap:.35rem; max-width:540px; }
+    .pinout-pin          { padding:.4rem .6rem; border-radius:6px; border:1px solid #1e2a38; font-family:'Share Tech Mono',monospace; font-size:.75rem; display:flex; flex-direction:column; gap:.1rem; min-height:44px; justify-content:center; }
+    .pinout-pin--free    { background:#0a131f; border-color:#1e3a50; color:#4a7a9b; }
+    .pinout-pin--used    { background:#0d1f10; border-width:2px; }
+    .pinout-pin--power   { background:#111; border-color:#222; color:#333; font-size:.65rem; }
+    .pinout-bcm          { font-size:.7rem; color:#6a8caa; }
+    .pinout-drink        { font-size:.75rem; font-weight:700; font-family:'Rajdhani',sans-serif; }
+    .pinout-legend       { display:flex; flex-wrap:wrap; gap:1rem; margin-top:.8rem; font-size:.8rem; color:#6a8caa; }
+    .legend-item         { display:flex; align-items:center; gap:.4rem; }
+    .legend-dot          { width:10px; height:10px; border-radius:50%; }
+
+    /* Code block */
+    .code-block-wrap     { position:relative; }
+    .code-block          { background:#060d14; border:1px solid #1e2a38; border-radius:8px; padding:1.2rem 1.4rem; font-family:'Share Tech Mono',monospace; font-size:.82rem; line-height:1.7; color:#9fcce8; overflow-x:auto; white-space:pre; }
+    .btn-copy            { position:absolute; top:.6rem; right:.6rem; background:#0e1a28; border:1px solid #1e3a50; color:#6a8caa; font-size:.75rem; padding:.3rem .7rem; border-radius:5px; cursor:pointer; transition:all .2s; }
+    .btn-copy:hover      { background:#1e2a38; color:#00d4ff; }
+
+    /* Server settings extras */
+    .relay-radio-group   { display:flex; flex-direction:column; gap:.6rem; margin:.5rem 0; }
+    .relay-radio-row     { display:flex; align-items:center; gap:.8rem; padding:.6rem .9rem; background:#0a131f; border:1px solid #1e2a38; border-radius:6px; cursor:pointer; transition:border-color .2s; }
+    .relay-radio-row:hover { border-color:#00d4ff55; }
+    .relay-radio-row input[type=radio] { accent-color:#00d4ff; width:16px; height:16px; }
+    .relay-radio-label   { font-family:'Rajdhani',sans-serif; font-weight:600; color:#e8f4ff; font-size:.95rem; flex:1; }
+    .relay-radio-sub     { font-size:.78rem; color:#6a8caa; font-family:'Share Tech Mono',monospace; }
+    #relayStatusDesc     { margin-top:.6rem; font-size:.82rem; line-height:1.6; }
+    .badge               { display:inline-block; padding:.15rem .45rem; border-radius:4px; font-family:'Share Tech Mono',monospace; font-size:.75rem; font-weight:700; }
+    .badge--warn         { background:#1f1200; border:1px solid #ffab0088; color:#ffab00; }
+    .badge--ok           { background:#0a1f0a; border:1px solid #00e67688; color:#00e676; }
+    .ping-row            { display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; }
+    #pingResult          { font-family:'Share Tech Mono',monospace; font-size:.82rem; color:#6a8caa; margin-top:.4rem; }
+    .field-input--small  { width:100px; }
+    .field-row-2col      { display:grid; grid-template-columns:1fr 140px; gap:1rem; }
+    .field-range-inline  { display:flex; align-items:center; gap:.8rem; }
+    .field-range         { flex:1; }
+    .field-value-badge   { min-width:70px; text-align:right; font-family:'Share Tech Mono',monospace; color:#00d4ff; font-size:.9rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="adm-header">
+    <div class="adm-logo">
+      <span class="logo-bar">BAR</span><span class="logo-dot">.</span><span class="logo-os">OS</span>
+      <span class="logo-tag">ADMIN</span>
+    </div>
+    <nav class="adm-nav">
+      <button class="nav-btn active" data-tab="drinks">🍾 Băuturi</button>
+      <button class="nav-btn"        data-tab="doses" >⚗ Doze</button>
+      <button class="nav-btn"        data-tab="gpio"  >⚡ GPIO</button>
+      <button class="nav-btn"        data-tab="server">⚙ Server</button>
+    </nav>
+    <a href="index.html" class="adm-back-btn">← UI</a>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 1 — BĂUTURI
+  ══════════════════════════════════════════════════════ -->
+  <main class="adm-content" id="tabDrinks">
+    <div class="adm-toolbar">
+      <h2 class="adm-section-title">Gestionare Băuturi</h2>
+      <button class="btn-primary" id="btnAddDrink">+ Adaugă băutură</button>
+    </div>
+    <div class="drink-list" id="drinkList"></div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 2 — DOZE
+  ══════════════════════════════════════════════════════ -->
+  <main class="adm-content hidden" id="tabDoses">
+    <div class="adm-toolbar">
+      <h2 class="adm-section-title">Configurare Doze</h2>
+      <button class="btn-primary" id="btnAddDose">+ Adaugă doză</button>
+    </div>
+    <div class="dose-list" id="doseList"></div>
+    <div class="info-box">
+      <span class="info-icon">ℹ</span>
+      Dozele configurate aici vor apărea pe ecranul de selecție pentru toate băuturile. Maxim 5 doze.
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 3 — GPIO
+  ══════════════════════════════════════════════════════ -->
+  <main class="adm-content hidden" id="tabGpio">
+    <div class="adm-toolbar">
+      <h2 class="adm-section-title">Mapare GPIO — Pini Releu</h2>
+    </div>
+    <div class="info-box" style="margin-bottom:1.5rem;">
+      <span class="info-icon">⚡</span>
+      Alocă fiecare băutură la un pin GPIO BCM al Raspberry Pi. Pinii marcați ca <strong>ocupați</strong> nu pot fi folosiți de două băuturi simultan.
+      Configurația generată poate fi copiată direct în <code>server.py</code>.
+    </div>
+    <div id="gpioMap"></div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 4 — SERVER & RELAY
+  ══════════════════════════════════════════════════════ -->
+  <main class="adm-content hidden" id="tabServer">
+    <div class="adm-toolbar">
+      <h2 class="adm-section-title">Setări Server & Hardware</h2>
+    </div>
+
+    <div class="settings-grid">
+
+      <!-- Conexiune Flask API -->
+      <div class="settings-card">
+        <h3 class="settings-card-title">🔌 Conexiune Flask API</h3>
+
+        <div class="field-group field-row-2col">
+          <div>
+            <label class="field-label">IP / hostname Raspberry Pi</label>
+            <input class="field-input" type="text" id="settingApiBase" placeholder="192.168.1.111" />
+            <span class="field-hint">Adresa Pi pe rețea. fără http:// — ex: <code>192.168.1.111</code> sau <code>raspberrypi.local</code></span>
+          </div>
+          <div>
+            <label class="field-label">Port</label>
+            <input class="field-input field-input--small" type="number" id="settingApiPort" value="5000" min="1" max="65535" />
+            <span class="field-hint">Default: 5000</span>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Test conexiune</label>
+          <div class="ping-row">
+            <button class="btn-secondary" id="btnPingServer">🔍 Ping /status</button>
+          </div>
+          <div id="pingResult"></div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Mod simulare (fără hardware)</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="settingSimulate" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label" id="simulateLabel">Dezactivat</span>
+          </div>
+          <span class="field-hint">Activează pentru a testa UI-ul fără Raspberry Pi conectat.</span>
+        </div>
+      </div>
+
+      <!-- Calibrare pompă -->
+      <div class="settings-card">
+        <h3 class="settings-card-title">💧 Calibrare Pompă</h3>
+
+        <div class="field-group">
+          <label class="field-label">
+            Debit pompă (ml/secundă)
+            <span class="field-value" id="flowRateValue">1.5 ml/s</span>
+          </label>
+          <div class="field-range-inline">
+            <input class="field-range" type="range" id="settingFlowRate"
+                   min="0.5" max="10" step="0.1" value="1.5" />
+            <span class="field-value-badge" id="flowRateValue">1.5 ml/s</span>
+          </div>
+          <div class="range-labels"><span>Lent (0.5)</span><span>Rapid (10)</span></div>
+          <span class="field-hint">Corespunde cu <code>FLOW_RATE_ML_PER_SEC</code> din server.py. Măsoară debitul real al pompei tale!</span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">
+            Milisecunde per ml (calculat automat)
+            <span class="field-value" id="msPerMlValue">667 ms</span>
+          </label>
+          <div class="field-range-inline">
+            <input class="field-range" type="range" id="settingMsPerMl"
+                   min="100" max="5000" step="10" value="667" />
+            <span class="field-value-badge" id="msPerMlValue">667 ms</span>
+          </div>
+          <span class="field-hint">Folosit de UI pentru bara de progres. Se calculează automat din debit, dar poate fi ajustat manual.</span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Test durată estimată</label>
+          <div class="test-row" id="testDoseRow"></div>
+          <div class="test-result" id="testResult"></div>
+        </div>
+      </div>
+
+      <!-- Relay Logic -->
+      <div class="settings-card">
+        <h3 class="settings-card-title">⚡ Logică Releu (Relay Logic)</h3>
+
+        <div class="field-group">
+          <label class="field-label">Tipul modulului de releu</label>
+          <div class="relay-radio-group">
+
+            <label class="relay-radio-row">
+              <input type="radio" name="relayLogic" value="low" />
+              <div>
+                <div class="relay-radio-label">ACTIVE LOW <span style="color:#00e676;font-size:.8rem;">(cel mai comun)</span></div>
+                <div class="relay-radio-sub">Semnalul LOW activează pompa · module relay cu optocuplor · tipic albastru/roșu</div>
+              </div>
+            </label>
+
+            <label class="relay-radio-row">
+              <input type="radio" name="relayLogic" value="high" />
+              <div>
+                <div class="relay-radio-label">ACTIVE HIGH</div>
+                <div class="relay-radio-sub">Semnalul HIGH activează pompa · SSR, MOSFET, relay fără inversare</div>
+              </div>
+            </label>
+
+          </div>
+          <div id="relayStatusDesc"></div>
+          <span class="field-hint">Setează greșit → pompele nu pornesc sau stau pornite tot timpul! Verifică datasheet-ul modulului.</span>
+        </div>
+      </div>
+
+      <!-- Config generată -->
+      <div class="settings-card" style="grid-column: 1 / -1;">
+        <h3 class="settings-card-title">📋 Configurație generată — server.py</h3>
+        <p style="color:#6a8caa;font-size:.85rem;margin-bottom:.8rem;">
+          Copiază blocul de mai jos și înlocuiește secțiunea CONFIGURATION din <code>server.py</code>.
+          Se actualizează automat la orice modificare.
+        </p>
+        <div class="code-block-wrap">
+          <pre class="code-block" id="serverCodePreview">— configurați băuturile și setările mai întâi —</pre>
+          <button class="btn-copy" id="btnCopyConfig">📋 Copiază</button>
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="settings-card settings-card--danger">
+        <h3 class="settings-card-title">⚠ Resetare completă</h3>
+        <p class="danger-desc">Șterge toate băuturile, dozele și setările. Sistemul rămâne gol — fără valori implicite.</p>
+        <button class="btn-danger" id="btnReset">Resetează totul</button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       MODAL — Adaugă / Editează băutură
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="drinkModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="drinkModalTitle">Adaugă băutură</h3>
+        <button class="modal-close" id="drinkModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-columns">
+
+          <div class="modal-preview">
+            <div class="preview-img-wrap" id="previewWrap">
+              <img id="previewImg" src="" alt="" />
+              <div class="preview-placeholder" id="previewPlaceholder">
+                <span>🍾</span><small>Preview imagine</small>
+              </div>
+            </div>
+            <div class="preview-badge" id="previewBadge" style="display:none;">
+              <span id="previewName">PREVIEW</span>
+            </div>
+          </div>
+
+          <div class="modal-fields">
+
+            <div class="field-group">
+              <label class="field-label">Nume băutură *</label>
+              <input class="field-input" type="text" id="drinkName" placeholder="ex: Vodka" maxlength="20" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">ID (cheie API) *</label>
+              <input class="field-input" type="text" id="drinkId" placeholder="ex: vodka" maxlength="20" />
+              <span class="field-hint">Litere mici, fără spații. Trebuie să corespundă cu <code>DRINK_PINS</code> din server.py</span>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Origine / ABV</label>
+              <input class="field-input" type="text" id="drinkOrigin" placeholder="ex: Rusia · 40% ABV" maxlength="40" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">URL imagine</label>
+              <div class="input-row">
+                <input class="field-input" type="url" id="drinkImage" placeholder="https://..." />
+                <button class="btn-secondary" id="btnPreviewImg">Preview</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Culoare accent</label>
+              <div class="color-row">
+                <input type="color" id="drinkColor" value="#00d4ff" class="color-picker" />
+                <div class="color-presets" id="colorPresets">
+                  <button class="color-preset" style="background:#00d4ff" data-color="#00d4ff"></button>
+                  <button class="color-preset" style="background:#ffab00" data-color="#ffab00"></button>
+                  <button class="color-preset" style="background:#d500f9" data-color="#d500f9"></button>
+                  <button class="color-preset" style="background:#00e676" data-color="#00e676"></button>
+                  <button class="color-preset" style="background:#ff3d57" data-color="#ff3d57"></button>
+                  <button class="color-preset" style="background:#ff6d00" data-color="#ff6d00"></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Pin GPIO (BCM)</label>
+              <select class="field-input" id="drinkPin">
+                <option value="">— Neasignat —</option>
+              </select>
+              <span class="field-hint">Pinii deja alocați altor băuturi sunt dezactivați. Poți schimba și din tab-ul GPIO.</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="drinkModalCancel">Anulează</button>
+        <button class="btn-primary" id="drinkModalSave">Salvează</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       MODAL — Adaugă / Editează doză
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="doseModal">
+    <div class="modal modal--small">
+      <div class="modal-header">
+        <h3 class="modal-title" id="doseModalTitle">Adaugă doză</h3>
+        <button class="modal-close" id="doseModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Cantitate (ml) *</label>
+          <div class="ml-input-row">
+            <button class="ml-step" data-dir="-10">−10</button>
+            <input class="field-input field-input--center" type="number" id="doseMl" value="40" min="5" max="500" />
+            <button class="ml-step" data-dir="10">+10</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Etichetă</label>
+          <input class="field-input" type="text" id="doseLabel" placeholder="ex: Double" maxlength="12" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Descriere scurtă</label>
+          <input class="field-input" type="text" id="doseDesc" placeholder="ex: Standard pour" maxlength="24" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="doseModalCancel">Anulează</button>
+        <button class="btn-primary" id="doseModalSave">Salvează</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Confirm dialog ─────────────────────────────────── -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal modal--small">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirmare</h3>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-text" id="confirmText">Ești sigur?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="confirmCancel">Anulează</button>
+        <button class="btn-danger" id="confirmOk">Confirmă</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="admin.js"></script>
+</body>
+</html>
