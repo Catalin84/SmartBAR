@@ -109,6 +109,7 @@ sudo systemctl status baros
 
 # Vezi log-urile live
 sudo journalctl -u baros -f
+[BAR.OS_Documentatie.docx](https://github.com/user-attachments/files/25979776/BAR.OS_Documentatie.docx)
 
 3.5  Interfața web (client)
 Fișierele index.html, app.js și style.css pot fi servite direct din același folder pe Pi sau de pe orice server web static.
